@@ -1,0 +1,76 @@
+body {background-color: transparent;
+    font-family: 'Arial Narrow', sans-serif ;
+    color: transparent;}
+
+#map_place {
+				width: 800px;
+				height: 560px;
+                border-style: solid;
+                border-color: saddlebrown;
+                border-width: 1px;
+                margin: 10px;
+                display: inline-flex;
+			}
+#table {
+				width: 500px;
+				max-height: 540px;
+                overflow: auto;
+                border-style: solid;
+                border-color: saddlebrown;
+                display: inline-block;
+                border-width: 1px;
+			}
+
+#title {
+                background-color: transparent;
+                border-style: double;
+                border-color: saddlebrown;
+                text-align: center;
+                text-shadow: 1px 1px 1px black;
+                border-radius: 15px;     
+                height: 40px;
+                width: 100%;
+                display:inline-block;
+}
+
+h3 {
+                margin: 1px ;
+                width: 100%;
+                color: #e3d8b5;
+                -webkit-text-stroke: 0.3px black;
+                font-family:Verdana, Geneva, Tahoma, sans-serif;
+
+}
+
+.nav{
+                width: 100px ;
+                height: 70px;
+                border: 2px ;
+                padding: 2px;
+                margin-top: -25px;
+                margin-left: 10px;
+}
+
+
+#eventTable td{
+     width: 125px;
+     color: black;
+}
+#eventTable th {
+		color: black;
+}
+
+.tooltip {
+    font-size: 10px !important;     /* tamaño del texto */
+    padding: 4px 4px !important;  /* agranda el cuadro */
+    color:red !important;      /* color del texto */
+    border: 2px solid #fff !important; /* borde opcional */
+    direction: top;
+}
+
+#button {
+                margin-top: 10px;
+                margin-left: 10px;
+                display: inline;
+            }
+

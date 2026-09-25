@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<script src="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.umd.min.js"></script>
+	<link href="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.css" rel="stylesheet" />
+	<script src="https://cdn.maptiler.com/leaflet-maptilersdk/v4.1.0/leaflet-maptilersdk.umd.min.js"></script>
+	<script src="leaflet/Leaflet.OpenMeteo.js"></script>
+	<title>Weather along the Route</title>
+	<link rel="stylesheet" type="text/css" href="css_proy.css">
+	<script src="https://cdn.lordicon.com/lordicon.js"></script>
+</head>
+
+<body>
+	<div id="title">
+		<div style="display: inline-flex; align-items: center;">
+			<lord-icon src="https://cdn.lordicon.com/btvefodi.json" trigger="loop" delay="1000" stroke="bold"
+				colors="primary:#3080e8,secondary:#3080e8" style="width:30px;height:43px;">
+			</lord-icon>
+			<h3>Weather along the Route: current conditions at the time of the query</h3>
+			<lord-icon src="https://cdn.lordicon.com/btvefodi.json" trigger="loop" delay="1000" stroke="bold"
+				colors="primary:#3080e8,secondary:#3080e8" style="width:30px;height:43px;">
+			</lord-icon>
+		</div>
+	</div>
+	<div>
+		<form>
+			<label style="color: black;">
+				<input type="checkbox" id="checkboxAccion1"> Make a route between two points
+			</label>
+
+			<label style="color: black;">
+				<input type="checkbox" id="checkboxAccion2"> Get weather information on apoint
+			</label>
+		</form>
+	</div>
+	<div>
+		<select id="travelmode">
+			<option value="driving-car">Driving</option>
+			<option value="cycling-regular">Cycling</option>
+			<option value="foot-walking">Walking</option>
+		</select>
+	</div>
+	<div id="table">
+		<table id="eventTable">
+			<thead>
+				<tr>
+					<th  style="text-align: center;" >#</th>
+					<th  style="text-align: center;">Property</th>
+					<th style="text-align: center;">Value</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+	<div id="button">
+		<input type="button" id="clearTableButton" value="Clear Space" onclick="document.querySelector('#eventTable tbody').innerHTML = ''; pointsGroup.clearLayers();
+				points = []; pointsGroupweather.clearLayers(); pointsweather = [] ;eventIndex = 0; count = 0;">
+	</div>
+	<div id="map_place"></div>
+	<script>
+		var apikey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM2MDAwZTM1YzhkMDQyYmU4ZTc3ZmQwNTJhM2YzZmUxIiwiaCI6Im11cm11cjY0In0=';
+
+		const map = L.map('map_place').setView([41.782993, 3.030553], 14);
+
+		const mtLayer = L.maptiler.maptilerLayer({
+			apiKey: 'fjwO8NZZ4aMlyjmeiNlq',
+		}).addTo(map);
+
+		var pointsGroup = L.layerGroup().addTo(map);
+		var points = [];	// array for thet points			
+
+		var pointsGroupweather = L.layerGroup().addTo(map);
+		var pointsweather = [];
+		var info;
+
+		function routeColor(travelmode) {
+			switch (travelmode) {
+				case "driving-car":
+					return "blue";
+				case "cycling-regular":
+					return "green";
+				case "foot-walking":
+					return "orange";
+				default:
+					return "gray";
+			}
+		}
+
+		function popuptext(layer) {
+			const w = layer.feature.properties;
+			return 'Temperature: ' + w.temperature + ' °C' + '<br/>' + 'Humidity: ' + w.humidity + ' %' + '<br/>' + ' Wind Speed: ' + w.wind_speed + ' m/s' + '<br/>' + ' Precipitation: ' + w.precipitation + ' mm';
+		}
+
+		function initialweather() {
+			for (let i = 0; i <= points.length; i++) {
+				const starturl = `https://api.open-meteo.com/v1/forecast?latitude=${points[i].lat}&longitude=${points[i].lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&timezone=auto`;
+
+				fetch(starturl)
+					.then(r => r.json())
+					.then(data => {
+						const weather = {
+									"type": "Feature",
+									"geometry": {
+										"type": "Point",
+										"coordinates": [points[i].lng, points[i].lat]
+									},
+									"properties": {
+										"temperature": data.current.temperature_2m,
+										"humidity": data.current.relative_humidity_2m,
+										"wind_speed": data.current.wind_speed_10m,
+										"precipitation": data.current.precipitation
+									}
+						};
+
+						info= L.geoJSON(weather).addTo(pointsGroup).bindPopup(popuptext,{closeOnClick: false, autoClose: false}).openPopup();
+					});
+			}
+		}
+
+		function plan() {
+			var travelmode = document.getElementById('travelmode').value;
+			var url = 'https://api.openrouteservice.org/v2/directions/' + travelmode + '?api_key=' + apikey
+				+ '&start=' + points[0].lng + ',' + points[0].lat
+				+ '&end=' + points[1].lng + ',' + points[1].lat;
+
+			console.log(url);
+			fetch(url)
+				.then(r => r.json()).then(data => {
+					// if there is an error in the response, show it
+					if (data.error) {
+						alert(data.error.message);
+						return;
+					}
+					if (data.features?.length > 0) {
+						routeFeature = data.features[0];
+						//renderRoute(routeFeature);				
+						console.log(data);
+					}
+					// add the returned geojson route to the map
+					route = L.geoJSON(data,
+						{
+							style: function (feature) {
+								return { color: routeColor(travelmode), weight: 4 };
+							}
+						}
+					).addTo(pointsGroup)
+				});
+		}
+
+		let eventIndex = 0;
+		let count = 0;
+
+		function showEventProperties(event, point) {
+
+			const tbody = document.querySelector("#eventTable tbody");
+
+			for (const row in point) {
+				const row = tbody.insertRow(-1);
+				row.className = row.rowIndex % 2 ? "odd" : "even";
+
+				const cell1 = row.insertCell(-1)
+				cell1.appendChild(document.createTextNode('Point #: ' + count++));
+			}
+
+			for (const p in event) {
+				const row = tbody.insertRow(-1);
+				row.className = row.rowIndex % 3 ? "odd" : "even";
+
+				const cell2 = row.insertCell(-1);
+				cell2.appendChild(document.createTextNode(eventIndex++));
+
+				const cell3 = row.insertCell(-1);
+				cell3.appendChild(document.createTextNode(p));
+
+				const cell4 = row.insertCell(-1);
+				cell4.appendChild(document.createTextNode(event[p]));
+			}
+		}
+
+		// event handler for map clicks
+		map.on("click", function (e) {
+			const chk1 = document.getElementById('checkboxAccion1');
+			const chk2 = document.getElementById('checkboxAccion2');
+
+			if (chk1.checked) {
+				if (points.length == 2) {
+					pointsGroup.clearLayers();
+					points = [];
+				}
+
+				L.marker(e.latlng).addTo(pointsGroup);
+				points.push(e.latlng);
+
+				if (points.length == 2) {
+					plan();
+					initialweather();
+				}
+			}
+
+			else if (chk2.checked) {
+				chk1.checked = 0; // Uncheck the other checkbox to ensure only one action is active
+
+				L.circleMarker(e.latlng, { radius: 5, color: 'red' })
+					.addTo(pointsGroupweather)
+					.bindTooltip(String(pointsweather.length), {
+						permanent: true,
+						className: "tooltip"
+					})
+				pointsweather.push(e.latlng);
+
+
+				const lat = e.latlng.lat;
+				const lng = e.latlng.lng;
+
+				const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&timezone=auto`;
+
+				fetch(url)
+					.then(r => r.json())
+					.then(data => {
+						console.log("DATA:", data);
+
+						const weather = {
+							temperature: data.current.temperature_2m,
+							humidity: data.current.relative_humidity_2m,
+							wind_speed: data.current.wind_speed_10m,
+							precipitation: data.current.precipitation
+						};
+
+						const point = {
+							position: pointsGroupweather.getLayers().length, // Número del punto basado en la cantidad de marcadores
+						}
+						console.log("WEATHER:", weather);
+
+						console.log(document.querySelector("#eventTable tbody"));
+
+						showEventProperties(weather, point);
+					});
+			}
+		});
+
+	</script>
+</body>
+
+</html>
